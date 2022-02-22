@@ -3,6 +3,6 @@
 *
 *.wav
 
-!simultaneousTest.py
+!convertToWav.py
 !stemplayer.py
 !README.md

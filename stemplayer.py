@@ -2,7 +2,7 @@ import pyaudio, wave, numpy, time, keyboard, os
 p = pyaudio.PyAudio()
 
 cwd = os.path.dirname(os.path.abspath(__file__))
-songFolder = "Roses"
+songFolder = "HarderBetterFasterStronger"
 targetDir = os.path.join(cwd, songFolder)
 
 drumsWF = wave.open(os.path.join(targetDir,"drums.wav"), "rb")
