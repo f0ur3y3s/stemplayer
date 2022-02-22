@@ -18,9 +18,8 @@ drumsMod = 1
 vocalsMod = 1
 bassMod = 1
 otherMod = 1
-
-ser = serial.Serial('/dev/ttyUSB2', 9600)
 potVal = [0.0,0.0,0.0,0.0]
+ser = serial.Serial('/dev/ttyUSB2', 9600)
 
 def callback(in_data, frame_count, time_info, status):
     global drumsMod, vocalsMod, bassMod, otherMod, potVal
