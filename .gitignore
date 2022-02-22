@@ -1,3 +1,7 @@
 *.mp3
 *.py
+*
+*.wav
+
 !simultaneousTest.py
+!README.md

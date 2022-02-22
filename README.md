@@ -1,4 +1,4 @@
-# stemplayer
+# pyStemPlayer
 
 A python program designed to take song stems and play simultaneously while manipulating the volume
 
