@@ -1,47 +1,44 @@
 import pyaudio, wave, numpy, time, keyboard, os
+import tkinter as tk
+from tkinter import filedialog
+import datetime
+import cursor
+# setup pyaudio
 p = pyaudio.PyAudio()
 
+# get current working directory
 cwd = os.path.dirname(os.path.abspath(__file__))
-songFolder = "HarderBetterFasterStronger"
-targetDir = os.path.join(cwd, songFolder)
 
-drumsWF = wave.open(os.path.join(targetDir,"drums.wav"), "rb")
-vocalsWF = wave.open(os.path.join(targetDir, "vocals.wav"),"rb")
-bassWF = wave.open(os.path.join(targetDir,"bass.wav"),"rb")
-otherWF = wave.open(os.path.join(targetDir,"other.wav"),"rb")
+# setting up tkinter dialog box
+root = tk.Tk()
+root.withdraw()
 
+# initialize modifiers
 drumsMod = 1
 vocalsMod = 1
 bassMod = 1
 otherMod = 1
+peakingMod = 1
+lastCall = datetime.datetime.now()
 
-start = 0
 def incMod(modvar):
-    if modvar >= 1:
-        modvar = 1
-    else:
-        modvar += 0.05
+    modvar += (0 if modvar >= 1 else 0.05)
     return modvar
 
 def decMod(modvar):
-    if modvar <= 0:
-        modvar = 0
-    else:
-        modvar -= 0.05
+    modvar -= (0 if modvar <= 0 else 0.05)
     return modvar
 
 def toggleMod(modvar):
-    if modvar >= 1:
-        modvar = 0
-    else:
-        modvar = 1
+    global lastCall
+    now = datetime.datetime.now()
+    if float(str(now - lastCall).split(":")[-1]) > 0.2:
+        modvar = 0 if modvar >= 1 else 1
+        lastCall = now
     return modvar
 
-def on_key_release(key):
-    print('Released Key %s' % key)
-
 def callback(in_data, frame_count, time_info, status):
-    global drumsMod, vocalsMod, bassMod, otherMod, keypress, start
+    global drumsMod, vocalsMod, bassMod, otherMod, keypress, start, peakingMod
     if keyboard.is_pressed('q'):
         drumsMod = incMod(drumsMod)
     elif keyboard.is_pressed('a'):
@@ -82,30 +79,58 @@ def callback(in_data, frame_count, time_info, status):
     decodedBass = numpy.frombuffer(bass, numpy.int16)
     decodedOther = numpy.frombuffer(other, numpy.int16)
     
-    newdata = (decodedDrums*drumsMod + decodedVocals*vocalsMod + decodedBass*bassMod + decodedOther*otherMod).astype(numpy.int16)
+    newdata = ((decodedDrums*drumsMod)*peakingMod + (decodedVocals*vocalsMod)*peakingMod + (decodedBass*bassMod)*peakingMod + (decodedOther*otherMod)*peakingMod).astype(numpy.int16)
     return (newdata.tobytes(), pyaudio.paContinue)
 
-stream = p.open(format=p.get_format_from_width(drumsWF.getsampwidth()),
-                channels=drumsWF.getnchannels(),
-                rate=drumsWF.getframerate(),
-                output=True,
-                stream_callback=callback,
-                start=True)
+if __name__ == "__main__":
+    cursor.hide()
 
-try:
-    print("[+] Starting stream...")
-    print("\n"*4, end="") # create space for mod
-    stream.start_stream()
-    while True:
-        if not stream.is_active():
-            stream.stop_stream()
-            stream.close()
-            p.terminate()
-            break
+    print("[+] Asking for song directory...")
+    targetDir = filedialog.askdirectory(initialdir = cwd)
+    songName = targetDir.split('/')[-1]
 
-except KeyboardInterrupt:
-    print("[+] Keyboard interrupt received... ending stream")
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-    exit()
+    try:
+        drumsWF = wave.open(os.path.join(targetDir,"drums.wav"), "rb")
+        vocalsWF = wave.open(os.path.join(targetDir, "vocals.wav"),"rb")
+        bassWF = wave.open(os.path.join(targetDir,"bass.wav"),"rb")
+        otherWF = wave.open(os.path.join(targetDir,"other.wav"),"rb")
+
+    except:
+        print("[-] Error opening files.")
+        cursor.show()
+        exit()
+    
+    try:
+        with open(os.path.join(targetDir, "peaking.txt")) as f:
+            peakingMod = float(f.read())
+            print(f"[+] Peaking modifier set to {peakingMod}")
+    except:
+        print(f"[-] No peaking modifer found, using 1.")
+
+    stream = p.open(format=p.get_format_from_width(drumsWF.getsampwidth()),
+                    channels=drumsWF.getnchannels(),
+                    rate=drumsWF.getframerate(),
+                    output=True,
+                    stream_callback=callback,
+                    start=True)
+
+    try:
+        print("[+] Starting stream...")
+        print(f"[+] Now playing {songName}...")
+        print("\n"*4, end="") # create space for mod
+        stream.start_stream()
+        while True:
+            if not stream.is_active():
+                stream.stop_stream()
+                stream.close()
+                p.terminate()
+                cursor.show()
+                break
+
+    except KeyboardInterrupt:
+        print("[+] Keyboard interrupt received... ending stream...")
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+        cursor.show()
+        exit()

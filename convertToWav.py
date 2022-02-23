@@ -1,15 +1,13 @@
 from pydub import AudioSegment
-from pydub.playback import play
+from os import listdir
+from os.path import isfile, join
 import os
 
 cwd = os.path.dirname(os.path.abspath(__file__))
-vocals = AudioSegment.from_file(os.path.join(cwd, "vocals.mp3"))
-drums = AudioSegment.from_file(os.path.join(cwd, "drums.mp3"))
-bass = AudioSegment.from_file(os.path.join(cwd,"bass.mp3"))
-other = AudioSegment.from_file(os.path.join(cwd,"other.mp3"))
 
-vocals.export(os.path.join(cwd,"vocals.wav"), format='wav') 
-drums.export(os.path.join(cwd,"drums.wav"), format='wav') 
-bass.export(os.path.join(cwd,"bass.wav"), format='wav') 
-other.export(os.path.join(cwd,"other.wav"),format='wav')
-
+onlyFiles = [f for f in listdir(cwd) if isfile(join(cwd, f))]
+for file in onlyFiles:
+    if ".mp3" in file or ".flac" in file:
+        fileName = file.split(".")[0]
+        openedFile = AudioSegment.from_file(os.path.join(cwd, file))
+        openedFile.export(os.path.join(cwd, fileName + ".wav"), format='wav') 
